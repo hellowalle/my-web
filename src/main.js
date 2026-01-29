@@ -274,6 +274,18 @@ async function pbRequest(path, options = {}) {
     try {
       const data = await response.json()
       if (data?.message) errorMessage = data.message
+
+      // PocketBase commonly returns { message, data: { field: { message } } }
+      if (data?.data && typeof data.data === 'object') {
+        const details = Object.entries(data.data)
+          .map(([field, info]) => {
+            const msg = typeof info?.message === 'string' ? info.message : ''
+            return msg ? `${field}: ${msg}` : field
+          })
+          .filter(Boolean)
+          .join('；')
+        if (details) errorMessage = `${errorMessage}（${details}）`
+      }
     } catch (error) {
       // ignore parse errors
     }
