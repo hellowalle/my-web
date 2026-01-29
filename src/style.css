@@ -23,6 +23,23 @@
   --radius: 18px;
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b1120;
+  --bg-accent: rgba(30, 58, 138, 0.55);
+  --bg-accent-2: rgba(15, 118, 110, 0.45);
+  --card: #0f172a;
+  --surface: #111827;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --primary: #60a5fa;
+  --primary-soft: rgba(59, 130, 246, 0.25);
+  --teal: #2dd4bf;
+  --indigo: #93c5fd;
+  --danger: #f87171;
+  --shadow: 0 22px 60px rgba(2, 6, 23, 0.5);
+}
+
 *,
 *::before,
 *::after {
@@ -45,7 +62,7 @@ body {
 }
 
 .app {
-  background: linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%);
+  background: linear-gradient(180deg, var(--card) 0%, var(--surface) 100%);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 32px;
@@ -118,6 +135,10 @@ body {
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
+:root[data-theme="dark"] .add-form {
+  background: linear-gradient(120deg, rgba(15, 23, 42, 0.85), var(--surface));
+}
+
 .add-form input {
   flex: 1;
   border: 1px solid transparent;
@@ -143,6 +164,12 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  flex-wrap: wrap;
+}
+
+.toolbar__right {
+  display: inline-flex;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
@@ -172,6 +199,28 @@ body {
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
 }
 
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.bulk-actions {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.selection-count strong {
+  color: var(--text);
+}
+
 .todo-list {
   list-style: none;
   margin: 0;
@@ -182,24 +231,61 @@ body {
 
 .todo {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 16px;
+  grid-template-columns: auto auto auto 1fr auto;
+  gap: 12px;
   align-items: center;
   padding: 14px 16px;
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--card);
   border: 1px solid rgba(148, 163, 184, 0.18);
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.todo.is-selected {
+  border-color: rgba(59, 130, 246, 0.45);
+  box-shadow: 0 12px 24px rgba(59, 130, 246, 0.18);
+}
+
+.todo.is-dragging {
+  opacity: 0.65;
+  border-style: dashed;
 }
 
 .todo.is-editing {
   grid-template-columns: 1fr auto;
 }
 
+.todo__select,
 .todo__toggle {
   width: 20px;
   height: 20px;
   accent-color: var(--primary);
+}
+
+.drag-handle {
+  border: 1px dashed rgba(148, 163, 184, 0.4);
+  background: transparent;
+  color: var(--muted);
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  cursor: grab;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, border-color 0.2s ease, color 0.2s ease;
+  touch-action: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+  transform: scale(0.96);
+}
+
+.drag-handle:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 2px;
 }
 
 .todo__title {
@@ -225,7 +311,12 @@ body {
   padding: 12px 14px;
   font-size: 1rem;
   outline: none;
-  background: #ffffff;
+  background: var(--card);
+}
+
+:root[data-theme="dark"] .edit-input {
+  border-color: rgba(148, 163, 184, 0.25);
+  color: var(--text);
 }
 
 .edit-input:focus-visible {
@@ -284,10 +375,18 @@ body {
   color: var(--danger);
 }
 
+:root[data-theme="dark"] .btn-danger {
+  background: rgba(248, 113, 113, 0.2);
+  color: #fca5a5;
+}
 .btn-ghost {
-  background: white;
+  background: var(--card);
   color: var(--muted);
   border: 1px solid #e6eaf5;
+}
+
+:root[data-theme="dark"] .btn-ghost {
+  border-color: rgba(148, 163, 184, 0.25);
 }
 
 .btn-sm {
@@ -328,11 +427,30 @@ body {
   }
 
   .todo {
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto auto 1fr;
+    grid-template-areas:
+      "select handle content"
+      "toggle toggle actions";
+  }
+
+  .todo__select {
+    grid-area: select;
+  }
+
+  .drag-handle {
+    grid-area: handle;
+  }
+
+  .todo__toggle {
+    grid-area: toggle;
+  }
+
+  .todo__content {
+    grid-area: content;
   }
 
   .todo__actions {
-    grid-column: 2 / -1;
+    grid-area: actions;
     justify-content: flex-end;
   }
 
