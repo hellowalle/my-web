@@ -76,6 +76,9 @@ let todos = loadTodos()
 let currentFilter = 'all'
 let editingId = null
 let draggingId = null
+let dragPlaceholder = null
+let pendingDragIndex = null
+let dragMoveScheduled = false
 const selectedIds = new Set()
 
 const themePreference = localStorage.getItem(THEME_KEY)
@@ -301,7 +304,10 @@ function updateBulkControls(items) {
 }
 
 function getDragInsertionIndex(clientY) {
-  const elements = Array.from(list.querySelectorAll('.todo'))
+  const elements = Array.from(list.querySelectorAll('.todo')).filter(
+    (item) =>
+      !item.classList.contains('todo-placeholder') && item.dataset.id !== draggingId
+  )
   if (elements.length === 0) return 0
   for (let i = 0; i < elements.length; i += 1) {
     const rect = elements[i].getBoundingClientRect()
@@ -309,6 +315,80 @@ function getDragInsertionIndex(clientY) {
     if (clientY < midpoint) return i
   }
   return elements.length
+}
+
+function animateListChange(update) {
+  const items = Array.from(list.querySelectorAll('.todo')).filter(
+    (item) =>
+      !item.classList.contains('todo-placeholder') && item.dataset.id !== draggingId
+  )
+  const firstRects = new Map(items.map((item) => [item, item.getBoundingClientRect()]))
+  update()
+  items.forEach((item) => {
+    const lastRect = item.getBoundingClientRect()
+    const firstRect = firstRects.get(item)
+    if (!firstRect) return
+    const dx = firstRect.left - lastRect.left
+    const dy = firstRect.top - lastRect.top
+    if (dx || dy) {
+      item.animate(
+        [
+          { transform: `translate(${dx}px, ${dy}px)` },
+          { transform: 'translate(0, 0)' },
+        ],
+        { duration: 180, easing: 'ease-out' }
+      )
+    }
+  })
+}
+
+function ensurePlaceholder(item) {
+  const height = item.getBoundingClientRect().height
+  if (!dragPlaceholder) {
+    dragPlaceholder = document.createElement('li')
+    dragPlaceholder.className = 'todo todo-placeholder'
+    dragPlaceholder.setAttribute('aria-hidden', 'true')
+  }
+  dragPlaceholder.style.height = `${height}px`
+  if (!dragPlaceholder.isConnected) {
+    item.after(dragPlaceholder)
+  }
+}
+
+function movePlaceholderToIndex(index) {
+  if (!dragPlaceholder) return
+  const items = Array.from(list.querySelectorAll('.todo')).filter(
+    (item) => !item.classList.contains('todo-placeholder')
+  )
+  const nextItem = items[index]
+  animateListChange(() => {
+    if (nextItem) {
+      list.insertBefore(dragPlaceholder, nextItem)
+    } else {
+      list.append(dragPlaceholder)
+    }
+  })
+}
+
+function schedulePlaceholderMove(index) {
+  pendingDragIndex = index
+  if (dragMoveScheduled) return
+  dragMoveScheduled = true
+  requestAnimationFrame(() => {
+    dragMoveScheduled = false
+    if (pendingDragIndex === null) return
+    movePlaceholderToIndex(pendingDragIndex)
+    pendingDragIndex = null
+  })
+}
+
+function cleanupDragState() {
+  if (dragPlaceholder?.isConnected) {
+    dragPlaceholder.remove()
+  }
+  dragPlaceholder = null
+  draggingId = null
+  list.classList.remove('is-dragging')
 }
 
 function applyDragOrderFromDom() {
@@ -399,7 +479,8 @@ function render() {
         handle.className = 'drag-handle'
         handle.setAttribute('data-drag-handle', 'true')
         handle.setAttribute('aria-label', `拖动排序 ${todo.title}`)
-        handle.textContent = '↕'
+        handle.textContent = '⠿'
+        handle.draggable = true
 
         const checkbox = document.createElement('input')
         checkbox.type = 'checkbox'
@@ -549,6 +630,7 @@ bulkButtons.forEach((button) => {
 })
 
 list.addEventListener('pointerdown', (event) => {
+  if (event.pointerType === 'mouse') return
   const target = event.target
   if (!(target instanceof HTMLElement)) return
   const handle = target.closest('[data-drag-handle]')
@@ -558,6 +640,8 @@ list.addEventListener('pointerdown', (event) => {
 
   event.preventDefault()
   draggingId = item.dataset.id
+  ensurePlaceholder(item)
+  list.classList.add('is-dragging')
   item.classList.add('is-dragging')
   item.setAttribute('aria-grabbed', 'true')
   handle.setPointerCapture(event.pointerId)
@@ -565,22 +649,17 @@ list.addEventListener('pointerdown', (event) => {
 
   const onPointerMove = (moveEvent) => {
     if (!draggingId) return
-    const currentItem = list.querySelector(`.todo[data-id="${draggingId}"]`)
-    if (!currentItem) return
     const insertIndex = getDragInsertionIndex(moveEvent.clientY)
-    const items = Array.from(list.querySelectorAll('.todo'))
-    const nextItem = items[insertIndex]
-    if (nextItem && nextItem !== currentItem) {
-      list.insertBefore(currentItem, nextItem)
-    }
-    if (!nextItem) {
-      list.append(currentItem)
-    }
+    schedulePlaceholderMove(insertIndex)
   }
 
   const onPointerUp = () => {
     handle.releasePointerCapture(event.pointerId)
-    draggingId = null
+    const currentItem = list.querySelector(`.todo[data-id="${draggingId}"]`)
+    if (currentItem && dragPlaceholder?.isConnected) {
+      list.insertBefore(currentItem, dragPlaceholder)
+    }
+    cleanupDragState()
     applyDragOrderFromDom()
     announce('已更新排序。')
     handle.removeEventListener('pointermove', onPointerMove)
@@ -591,6 +670,52 @@ list.addEventListener('pointerdown', (event) => {
   handle.addEventListener('pointermove', onPointerMove)
   handle.addEventListener('pointerup', onPointerUp)
   handle.addEventListener('pointercancel', onPointerUp)
+})
+
+list.addEventListener('dragstart', (event) => {
+  const target = event.target
+  if (!(target instanceof HTMLElement)) return
+  const handle = target.closest('[data-drag-handle]')
+  if (!handle) return
+  const item = handle.closest('.todo')
+  if (!item || item.classList.contains('is-editing')) return
+  if (!item.dataset.id) return
+
+  draggingId = item.dataset.id
+  ensurePlaceholder(item)
+  list.classList.add('is-dragging')
+  item.classList.add('is-dragging')
+  item.setAttribute('aria-grabbed', 'true')
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', draggingId)
+    event.dataTransfer.setDragImage(item, 24, 24)
+  }
+})
+
+list.addEventListener('dragover', (event) => {
+  if (!draggingId) return
+  event.preventDefault()
+  const insertIndex = getDragInsertionIndex(event.clientY)
+  schedulePlaceholderMove(insertIndex)
+})
+
+list.addEventListener('drop', (event) => {
+  if (!draggingId) return
+  event.preventDefault()
+  const currentItem = list.querySelector(`.todo[data-id="${draggingId}"]`)
+  if (currentItem && dragPlaceholder?.isConnected) {
+    list.insertBefore(currentItem, dragPlaceholder)
+  }
+  cleanupDragState()
+  applyDragOrderFromDom()
+  announce('已更新排序。')
+})
+
+list.addEventListener('dragend', () => {
+  if (!draggingId) return
+  cleanupDragState()
+  applyDragOrderFromDom()
 })
 
 render()
