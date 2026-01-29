@@ -33,9 +33,11 @@ app.innerHTML = `
             <input
               id="auth-password"
               type="password"
-              placeholder="密码"
+              placeholder="密码（至少 8 位）"
               autocomplete="current-password"
+              minlength="8"
             />
+            <p class="auth-hint" data-auth-hint>密码至少 8 位。注册时需要满足此要求。</p>
           </div>
           <div class="auth-actions">
             <button class="btn btn-primary btn-sm" type="button" data-auth-action="signin">
@@ -961,6 +963,14 @@ authActionButtons.forEach((button) => {
       setAuthMessage('请输入邮箱和密码。', 'error')
       return
     }
+
+    // Client-side validation (better UX than generic server errors)
+    if (action === 'signup' && password.length < 8) {
+      setAuthMessage('密码至少 8 位。', 'error')
+      authPasswordInput.focus()
+      return
+    }
+
     try {
       if (action === 'signin') {
         await signInWithPassword(email, password)
