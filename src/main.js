@@ -3,7 +3,7 @@ import './style.css'
 const STORAGE_KEY = 'todos.v1'
 const THEME_KEY = 'theme.v1'
 const AUTH_KEY = 'pb.auth.v1'
-const PB_BASE = 'http://api.clawdbot.beyondh5.com'
+const PB_BASE = 'https://api.clawdbot.beyondh5.com'
 
 const app = document.querySelector('#app')
 
@@ -248,7 +248,7 @@ function reindexTodos(list) {
 
 function authHeaders() {
   if (!auth?.token) return {}
-  return { Authorization: auth.token }
+  return { Authorization: `Bearer ${auth.token}` }
 }
 
 async function pbRequest(path, options = {}) {
