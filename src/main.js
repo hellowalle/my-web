@@ -2,6 +2,8 @@ import './style.css'
 
 const STORAGE_KEY = 'todos.v1'
 const THEME_KEY = 'theme.v1'
+const AUTH_KEY = 'pb.auth.v1'
+const PB_BASE = 'http://api.clawdbot.beyondh5.com'
 
 const app = document.querySelector('#app')
 
@@ -14,6 +16,42 @@ app.innerHTML = `
         <p class="subtitle">清晰规划，高效收尾。</p>
       </div>
     </header>
+
+    <section class="settings" aria-label="账号与同步状态">
+      <div class="settings-card">
+        <div class="settings-row">
+          <span class="status-dot" data-connection-dot aria-hidden="true"></span>
+          <span data-connection-text>离线</span>
+          <span class="settings-sep" aria-hidden="true">•</span>
+          <span class="settings-email" data-auth-email>未登录</span>
+        </div>
+        <div class="auth-panel" data-auth-state="signed-out">
+          <div class="auth-fields">
+            <label class="sr-only" for="auth-email">邮箱</label>
+            <input id="auth-email" type="email" placeholder="邮箱" autocomplete="email" />
+            <label class="sr-only" for="auth-password">密码</label>
+            <input
+              id="auth-password"
+              type="password"
+              placeholder="密码"
+              autocomplete="current-password"
+            />
+          </div>
+          <div class="auth-actions">
+            <button class="btn btn-primary btn-sm" type="button" data-auth-action="signin">
+              登录
+            </button>
+            <button class="btn btn-ghost btn-sm" type="button" data-auth-action="signup">
+              注册
+            </button>
+            <button class="btn btn-ghost btn-sm" type="button" data-auth-action="signout">
+              退出登录
+            </button>
+          </div>
+          <p class="auth-message" data-auth-message></p>
+        </div>
+      </div>
+    </section>
 
     <form class="add-form" aria-label="添加待办事项">
       <label class="sr-only" for="new-todo">添加待办事项</label>
@@ -71,8 +109,16 @@ const bulkButtons = Array.from(app.querySelectorAll('[data-bulk]'))
 const selectedCountEl = app.querySelector('[data-selected-count]')
 const announcer = app.querySelector('[data-announcer]')
 const countEl = app.querySelector('[data-count]')
+const connectionDot = app.querySelector('[data-connection-dot]')
+const connectionText = app.querySelector('[data-connection-text]')
+const authEmailLabel = app.querySelector('[data-auth-email]')
+const authPanel = app.querySelector('.auth-panel')
+const authEmailInput = app.querySelector('#auth-email')
+const authPasswordInput = app.querySelector('#auth-password')
+const authMessage = app.querySelector('[data-auth-message]')
+const authActionButtons = Array.from(app.querySelectorAll('[data-auth-action]'))
 
-let todos = loadTodos()
+let todos = reindexTodos(loadTodos())
 let currentFilter = 'all'
 let editingId = null
 let draggingId = null
@@ -80,6 +126,8 @@ let dragPlaceholder = null
 let pendingDragIndex = null
 let dragMoveScheduled = false
 const selectedIds = new Set()
+let auth = loadAuth()
+let isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true
 
 const themePreference = localStorage.getItem(THEME_KEY)
 const systemPrefersDark =
@@ -88,6 +136,8 @@ const systemPrefersDark =
   window.matchMedia('(prefers-color-scheme: dark)').matches
 let currentTheme = themePreference || (systemPrefersDark ? 'dark' : 'light')
 applyTheme(currentTheme)
+updateAuthUI()
+updateConnectionUI()
 
 function loadTodos() {
   try {
@@ -99,8 +149,10 @@ function loadTodos() {
       .filter((item) => typeof item?.title === 'string')
       .map((item) => ({
         id: item.id || cryptoId(),
+        remoteId: item.remoteId || null,
         title: item.title,
         completed: Boolean(item.completed),
+        position: Number.isFinite(item.position) ? item.position : 0,
       }))
   } catch (error) {
     console.error('Failed to load todos', error)
@@ -131,6 +183,231 @@ function announce(message) {
   })
 }
 
+function loadAuth() {
+  try {
+    const raw = localStorage.getItem(AUTH_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed?.token || !parsed?.user?.id) return null
+    return parsed
+  } catch (error) {
+    console.error('Failed to load auth', error)
+    return null
+  }
+}
+
+function saveAuth(nextAuth) {
+  auth = nextAuth
+  if (nextAuth) {
+    localStorage.setItem(AUTH_KEY, JSON.stringify(nextAuth))
+  } else {
+    localStorage.removeItem(AUTH_KEY)
+  }
+  updateAuthUI()
+}
+
+function clearAuth() {
+  saveAuth(null)
+}
+
+function setAuthMessage(message, tone = 'info') {
+  if (!authMessage) return
+  authMessage.textContent = message
+  authMessage.dataset.tone = tone
+}
+
+function updateAuthUI() {
+  if (!authPanel) return
+  const signedIn = Boolean(auth?.token && auth?.user?.email)
+  authPanel.dataset.authState = signedIn ? 'signed-in' : 'signed-out'
+  if (authEmailLabel) {
+    authEmailLabel.textContent = signedIn ? auth.user.email : '未登录'
+  }
+  if (!signedIn) {
+    authEmailInput.value = ''
+    authPasswordInput.value = ''
+  }
+}
+
+function updateConnectionUI() {
+  if (connectionText) {
+    connectionText.textContent = isOnline ? '在线' : '离线'
+  }
+  if (connectionDot) {
+    connectionDot.classList.toggle('is-online', isOnline)
+  }
+}
+
+function shouldSyncRemote() {
+  return Boolean(auth?.token) && isOnline
+}
+
+function reindexTodos(list) {
+  return list.map((todo, index) => ({ ...todo, position: index }))
+}
+
+function authHeaders() {
+  if (!auth?.token) return {}
+  return { Authorization: auth.token }
+}
+
+async function pbRequest(path, options = {}) {
+  const url = new URL(path, PB_BASE)
+  if (options.query) {
+    Object.entries(options.query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        url.searchParams.set(key, String(value))
+      }
+    })
+  }
+  const response = await fetch(url.toString(), {
+    method: options.method || 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders(),
+      ...(options.headers || {}),
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  })
+  if (!response.ok) {
+    let errorMessage = `请求失败 (${response.status})`
+    try {
+      const data = await response.json()
+      if (data?.message) errorMessage = data.message
+    } catch (error) {
+      // ignore parse errors
+    }
+    const error = new Error(errorMessage)
+    error.status = response.status
+    throw error
+  }
+  if (response.status === 204) return null
+  return response.json()
+}
+
+async function signInWithPassword(email, password) {
+  const payload = await pbRequest('/api/collections/users/auth-with-password', {
+    method: 'POST',
+    body: { identity: email, password },
+  })
+  saveAuth({ token: payload?.token, user: payload?.record })
+  setAuthMessage('登录成功，正在同步...', 'success')
+  await syncFromRemote()
+}
+
+async function signUpWithEmail(email, password) {
+  await pbRequest('/api/collections/users/records', {
+    method: 'POST',
+    body: { email, password, passwordConfirm: password },
+  })
+  await signInWithPassword(email, password)
+}
+
+async function syncFromRemote() {
+  if (!shouldSyncRemote()) return
+  try {
+    const data = await pbRequest('/api/collections/todos/records', {
+      query: {
+        perPage: 200,
+        sort: 'position',
+        filter: `owner="${auth.user.id}"`,
+      },
+    })
+    const items = Array.isArray(data?.items) ? data.items : []
+    const normalized = items
+      .map((item, index) => ({
+        id: item.id,
+        remoteId: item.id,
+        title: item.title || '',
+        completed: Boolean(item.completed),
+        position: Number.isFinite(item.position) ? item.position : index,
+      }))
+      .sort((a, b) => a.position - b.position)
+    todos = reindexTodos(normalized)
+    selectedIds.clear()
+    editingId = null
+    saveTodos()
+    render()
+    setAuthMessage('已完成云端同步。', 'success')
+  } catch (error) {
+    if (error?.status === 401) {
+      clearAuth()
+      setAuthMessage('登录已过期，请重新登录。', 'error')
+      return
+    }
+    console.error('Failed to sync from remote', error)
+    setAuthMessage('同步失败，请检查网络。', 'error')
+  }
+}
+
+async function createRemoteTodo(todo) {
+  if (!shouldSyncRemote()) return
+  try {
+    const payload = await pbRequest('/api/collections/todos/records', {
+      method: 'POST',
+      body: {
+        title: todo.title,
+        completed: todo.completed,
+        position: todo.position,
+        owner: auth.user.id,
+      },
+    })
+    if (!payload?.id) return
+    const previousId = todo.id
+    todos = todos.map((item) =>
+      item.id === previousId
+        ? { ...item, id: payload.id, remoteId: payload.id }
+        : item
+    )
+    if (selectedIds.has(previousId)) {
+      selectedIds.delete(previousId)
+      selectedIds.add(payload.id)
+    }
+    if (editingId === previousId) editingId = payload.id
+    if (draggingId === previousId) draggingId = payload.id
+    saveTodos()
+    render()
+  } catch (error) {
+    console.error('Failed to create remote todo', error)
+  }
+}
+
+async function updateRemoteTodo(todo) {
+  if (!shouldSyncRemote()) return
+  const remoteId = todo.remoteId
+  if (!remoteId) return
+  try {
+    await pbRequest(`/api/collections/todos/records/${remoteId}`, {
+      method: 'PATCH',
+      body: {
+        title: todo.title,
+        completed: todo.completed,
+        position: todo.position,
+      },
+    })
+  } catch (error) {
+    console.error('Failed to update remote todo', error)
+  }
+}
+
+async function deleteRemoteTodo(todo) {
+  if (!shouldSyncRemote()) return
+  const remoteId = todo.remoteId
+  if (!remoteId) return
+  try {
+    await pbRequest(`/api/collections/todos/records/${remoteId}`, {
+      method: 'DELETE',
+    })
+  } catch (error) {
+    console.error('Failed to delete remote todo', error)
+  }
+}
+
+async function syncPositions() {
+  if (!shouldSyncRemote()) return
+  await Promise.all(todos.map((todo) => updateRemoteTodo(todo)))
+}
+
 function cryptoId() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID()
@@ -141,25 +418,39 @@ function cryptoId() {
 function addTodo(title) {
   const trimmed = title.trim()
   if (!trimmed) return
-  todos = [{ id: cryptoId(), title: trimmed, completed: false }, ...todos]
+  const localTodo = {
+    id: cryptoId(),
+    remoteId: null,
+    title: trimmed,
+    completed: false,
+    position: 0,
+  }
+  todos = reindexTodos([localTodo, ...todos])
   saveTodos()
   render()
+  void createRemoteTodo(localTodo)
 }
 
 function toggleTodo(id) {
   todos = todos.map((todo) =>
     todo.id === id ? { ...todo, completed: !todo.completed } : todo
   )
+  todos = reindexTodos(todos)
   saveTodos()
   render()
+  const updated = todos.find((todo) => todo.id === id)
+  if (updated) void updateRemoteTodo(updated)
 }
 
 function deleteTodo(id) {
+  const removed = todos.find((todo) => todo.id === id)
   todos = todos.filter((todo) => todo.id !== id)
   selectedIds.delete(id)
   if (editingId === id) editingId = null
+  todos = reindexTodos(todos)
   saveTodos()
   render()
+  if (removed) void deleteRemoteTodo(removed)
 }
 
 function setFilter(filter) {
@@ -187,17 +478,23 @@ function saveEdit(id, title) {
     todo.id === id ? { ...todo, title: trimmed } : todo
   )
   editingId = null
+  todos = reindexTodos(todos)
   saveTodos()
   render()
+  const updated = todos.find((todo) => todo.id === id)
+  if (updated) void updateRemoteTodo(updated)
 }
 
 function clearCompleted() {
+  const removed = todos.filter((todo) => todo.completed)
   todos = todos.filter((todo) => {
     if (todo.completed) selectedIds.delete(todo.id)
     return !todo.completed
   })
+  todos = reindexTodos(todos)
   saveTodos()
   render()
+  removed.forEach((todo) => void deleteRemoteTodo(todo))
 }
 
 function filteredTodos() {
@@ -227,8 +524,10 @@ function applyVisibleOrder(visibleOrder) {
     if (!visibleSet.has(todo.id)) return todo
     return reorderedVisible[index++]
   })
+  todos = reindexTodos(todos)
   saveTodos()
   render()
+  void syncPositions()
 }
 
 function moveTodoBy(id, delta) {
@@ -267,17 +566,24 @@ function completeSelected() {
   todos = todos.map((todo) =>
     selectedIds.has(todo.id) ? { ...todo, completed: true } : todo
   )
+  todos = reindexTodos(todos)
   saveTodos()
   render()
+  todos
+    .filter((todo) => selectedIds.has(todo.id))
+    .forEach((todo) => void updateRemoteTodo(todo))
   announce('已标记所选事项为已完成。')
 }
 
 function deleteSelected() {
   if (selectedIds.size === 0) return
+  const removed = todos.filter((todo) => selectedIds.has(todo.id))
   todos = todos.filter((todo) => !selectedIds.has(todo.id))
   selectedIds.clear()
+  todos = reindexTodos(todos)
   saveTodos()
   render()
+  removed.forEach((todo) => void deleteRemoteTodo(todo))
   announce('已删除所选事项。')
 }
 
@@ -629,6 +935,44 @@ bulkButtons.forEach((button) => {
   })
 })
 
+authActionButtons.forEach((button) => {
+  button.addEventListener('click', async () => {
+    const action = button.dataset.authAction
+    if (action === 'signout') {
+      clearAuth()
+      setAuthMessage('已退出登录。', 'info')
+      return
+    }
+    const email = authEmailInput.value.trim()
+    const password = authPasswordInput.value
+    if (!email || !password) {
+      setAuthMessage('请输入邮箱和密码。', 'error')
+      return
+    }
+    try {
+      if (action === 'signin') {
+        await signInWithPassword(email, password)
+      }
+      if (action === 'signup') {
+        await signUpWithEmail(email, password)
+      }
+    } catch (error) {
+      console.error('Auth failed', error)
+      setAuthMessage(error?.message || '认证失败，请重试。', 'error')
+    }
+  })
+})
+
+window.addEventListener('online', () => {
+  isOnline = true
+  updateConnectionUI()
+})
+
+window.addEventListener('offline', () => {
+  isOnline = false
+  updateConnectionUI()
+})
+
 list.addEventListener('pointerdown', (event) => {
   if (event.pointerType === 'mouse') return
   const target = event.target
@@ -719,3 +1063,6 @@ list.addEventListener('dragend', () => {
 })
 
 render()
+if (auth?.token && isOnline) {
+  void syncFromRemote()
+}
