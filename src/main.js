@@ -5,41 +5,41 @@ const STORAGE_KEY = 'todos.v1'
 const app = document.querySelector('#app')
 
 app.innerHTML = `
-  <main class="app" aria-label="Todo application">
+  <main class="app" aria-label="待办事项应用">
     <header class="app__header">
-      <div>
-        <span class="pill">Today</span>
-        <h1>Todo Studio</h1>
-        <p class="subtitle">Plan with clarity, finish with momentum.</p>
+      <div class="header-content">
+        <span class="pill pill--header">今日</span>
+        <h1>待办工作室</h1>
+        <p class="subtitle">清晰规划，高效收尾。</p>
       </div>
     </header>
 
-    <form class="add-form" aria-label="Add a todo">
-      <label class="sr-only" for="new-todo">Add a todo</label>
+    <form class="add-form" aria-label="添加待办事项">
+      <label class="sr-only" for="new-todo">添加待办事项</label>
       <input
         id="new-todo"
         name="new-todo"
         type="text"
-        placeholder="Add a task and press Enter"
+        placeholder="添加事项并按回车"
         autocomplete="off"
       />
-      <button class="btn btn-primary" type="submit">Add</button>
+      <button class="btn btn-primary" type="submit">添加</button>
     </form>
 
-    <section class="toolbar" aria-label="Todo filters and actions">
-      <div class="filters" role="tablist" aria-label="Filter todos">
-        <button class="filter-btn" type="button" data-filter="all" aria-pressed="true">All</button>
-        <button class="filter-btn" type="button" data-filter="active" aria-pressed="false">Active</button>
-        <button class="filter-btn" type="button" data-filter="completed" aria-pressed="false">Completed</button>
+    <section class="toolbar" aria-label="筛选与操作">
+      <div class="filters" role="tablist" aria-label="筛选待办">
+        <button class="filter-btn" type="button" data-filter="all" aria-pressed="true">全部</button>
+        <button class="filter-btn" type="button" data-filter="active" aria-pressed="false">进行中</button>
+        <button class="filter-btn" type="button" data-filter="completed" aria-pressed="false">已完成</button>
       </div>
-      <button class="btn btn-ghost clear-completed" type="button">Clear completed</button>
+      <button class="btn btn-ghost clear-completed" type="button">清除已完成</button>
     </section>
 
     <ul class="todo-list" aria-live="polite"></ul>
 
     <footer class="app__footer">
-      <span class="count"><strong data-count>0</strong> items left</span>
-      <span class="hint">Tip: Enter to add, Enter to save, Esc to cancel edit.</span>
+      <span class="count"><strong data-count>0</strong> 项待完成</span>
+      <span class="hint">提示：回车添加，回车保存，Esc 取消编辑。</span>
     </footer>
   </main>
 `
@@ -176,10 +176,10 @@ function render() {
     empty.className = 'empty-state'
     empty.textContent =
       currentFilter === 'completed'
-        ? 'No completed tasks yet.'
+        ? '暂无已完成的任务。'
         : currentFilter === 'active'
-          ? 'All caught up. Add a new task.'
-          : 'Your list is empty. Start with one task.'
+          ? '都处理完了，添加新事项吧。'
+          : '列表还是空的，从第一条开始吧。'
     list.append(empty)
   } else {
     items.forEach((todo) => {
@@ -195,7 +195,7 @@ function render() {
         editInput.value = todo.title
         editInput.className = 'edit-input'
         editInput.setAttribute('data-edit-id', todo.id)
-        editInput.setAttribute('aria-label', 'Edit todo')
+        editInput.setAttribute('aria-label', '编辑待办')
 
         editInput.addEventListener('keydown', (event) => {
           if (event.key === 'Enter') {
@@ -213,13 +213,13 @@ function render() {
         saveButton.type = 'button'
         saveButton.className = 'btn btn-primary btn-sm'
         saveButton.dataset.action = 'save'
-        saveButton.textContent = 'Save'
+        saveButton.textContent = '保存'
 
         const cancelButton = document.createElement('button')
         cancelButton.type = 'button'
         cancelButton.className = 'btn btn-ghost btn-sm'
         cancelButton.dataset.action = 'cancel'
-        cancelButton.textContent = 'Cancel'
+        cancelButton.textContent = '取消'
 
         editActions.append(saveButton, cancelButton)
         li.append(editInput, editActions)
@@ -228,8 +228,8 @@ function render() {
         checkbox.type = 'checkbox'
         checkbox.className = 'todo__toggle'
         checkbox.checked = todo.completed
-        checkbox.setAttribute('aria-label', `Mark ${todo.title} as ${
-          todo.completed ? 'incomplete' : 'complete'
+        checkbox.setAttribute('aria-label', `将 ${todo.title} 标记为${
+          todo.completed ? '未完成' : '已完成'
         }`)
 
         const content = document.createElement('div')
@@ -246,15 +246,15 @@ function render() {
         editButton.type = 'button'
         editButton.className = 'btn btn-ghost btn-sm'
         editButton.dataset.action = 'edit'
-        editButton.textContent = 'Edit'
-        editButton.setAttribute('aria-label', `Edit ${todo.title}`)
+        editButton.textContent = '编辑'
+        editButton.setAttribute('aria-label', `编辑 ${todo.title}`)
 
         const deleteButton = document.createElement('button')
         deleteButton.type = 'button'
         deleteButton.className = 'btn btn-danger btn-sm'
         deleteButton.dataset.action = 'delete'
-        deleteButton.textContent = 'Delete'
-        deleteButton.setAttribute('aria-label', `Delete ${todo.title}`)
+        deleteButton.textContent = '删除'
+        deleteButton.setAttribute('aria-label', `删除 ${todo.title}`)
 
         content.append(title)
         actions.append(editButton, deleteButton)
