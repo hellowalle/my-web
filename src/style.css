@@ -162,6 +162,10 @@ body {
   font-weight: 600;
 }
 
+.settings-row [data-sync-now] {
+  margin-left: auto;
+}
+
 .settings-sep {
   opacity: 0.6;
 }

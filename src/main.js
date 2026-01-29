@@ -24,6 +24,9 @@ app.innerHTML = `
           <span data-connection-text>离线</span>
           <span class="settings-sep" aria-hidden="true">•</span>
           <span class="settings-email" data-auth-email>未登录</span>
+          <button class="btn btn-ghost btn-sm" type="button" data-sync-now>
+            立即同步
+          </button>
         </div>
         <div class="auth-panel" data-auth-state="signed-out">
           <div class="auth-fields">
@@ -119,6 +122,7 @@ const authEmailInput = app.querySelector('#auth-email')
 const authPasswordInput = app.querySelector('#auth-password')
 const authMessage = app.querySelector('[data-auth-message]')
 const authActionButtons = Array.from(app.querySelectorAll('[data-auth-action]'))
+const syncNowButton = app.querySelector('[data-sync-now]')
 
 let todos = reindexTodos(loadTodos())
 let currentFilter = 'all'
@@ -130,6 +134,7 @@ let dragMoveScheduled = false
 const selectedIds = new Set()
 let auth = loadAuth()
 let isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true
+let isSyncing = false
 
 const themePreference = localStorage.getItem(THEME_KEY)
 const systemPrefersDark =
@@ -229,6 +234,7 @@ function updateAuthUI() {
     authEmailInput.value = ''
     authPasswordInput.value = ''
   }
+  updateSyncNowUI()
 }
 
 function updateConnectionUI() {
@@ -238,10 +244,19 @@ function updateConnectionUI() {
   if (connectionDot) {
     connectionDot.classList.toggle('is-online', isOnline)
   }
+  updateSyncNowUI()
 }
 
 function shouldSyncRemote() {
   return Boolean(auth?.token) && isOnline
+}
+
+function updateSyncNowUI() {
+  if (!syncNowButton) return
+  const enabled = shouldSyncRemote() && !isSyncing
+  syncNowButton.disabled = !enabled
+  syncNowButton.textContent = isSyncing ? '同步中…' : '立即同步'
+  syncNowButton.style.display = auth?.token ? '' : 'none'
 }
 
 function reindexTodos(list) {
@@ -319,6 +334,8 @@ async function signUpWithEmail(email, password) {
 
 async function syncFromRemote() {
   if (!shouldSyncRemote()) return
+  isSyncing = true
+  updateSyncNowUI()
   try {
     const data = await pbRequest('/api/collections/todos/records', {
       query: {
@@ -351,6 +368,9 @@ async function syncFromRemote() {
     }
     console.error('Failed to sync from remote', error)
     setAuthMessage('同步失败，请检查网络。', 'error')
+  } finally {
+    isSyncing = false
+    updateSyncNowUI()
   }
 }
 
@@ -984,6 +1004,17 @@ authActionButtons.forEach((button) => {
     }
   })
 })
+
+if (syncNowButton) {
+  syncNowButton.addEventListener('click', async () => {
+    if (!shouldSyncRemote()) {
+      setAuthMessage('请先登录并保持网络在线。', 'error')
+      return
+    }
+    setAuthMessage('正在同步...', 'info')
+    await syncFromRemote()
+  })
+}
 
 window.addEventListener('online', () => {
   isOnline = true
