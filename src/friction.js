@@ -153,7 +153,7 @@ let mode = 'manual' // manual | auto
 let isRunning = false
 
 // Physics state (1D along x)
-let xPx = 36
+let xPx = 180
 let v = 0 // m/s
 let a = 0 // m/s^2
 
@@ -245,7 +245,7 @@ function renderBox() {
   if (bear) {
     const bearWidth = 120
     const contactGap = 2
-    bear.style.transform = `translateX(${Math.max(0, xPx - bearWidth + contactGap)}px)`
+    bear.style.transform = `translateX(${xPx - bearWidth + contactGap}px)`
   }
 }
 
@@ -255,7 +255,7 @@ function reset() {
   manualForceN = 0
   v = 0
   a = 0
-  xPx = 36
+  xPx = 180
   renderBox()
   updateNumbers()
 }
