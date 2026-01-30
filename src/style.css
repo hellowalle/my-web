@@ -488,6 +488,40 @@ body {
   color: var(--muted);
 }
 
+.bear {
+  position: absolute;
+  left: 0;
+  bottom: 90px;
+  width: 120px;
+  height: 90px;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transform: translateX(0);
+  transition: opacity 180ms ease;
+  filter: drop-shadow(0 10px 20px rgba(2, 6, 23, 0.22));
+}
+
+.bear img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.bear[data-visible="true"] {
+  opacity: 1;
+}
+
+@keyframes bearPush {
+  0% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(2px) rotate(1deg); }
+  100% { transform: translateY(0) rotate(-1deg); }
+}
+
+.bear[data-pushing="true"] img {
+  animation: bearPush 420ms ease-in-out infinite;
+}
+
 .friction__footer {
   display: flex;
   gap: 10px;

@@ -105,6 +105,9 @@ app.innerHTML = `
             <div class="box__sub">拖动我</div>
           </div>
           <div class="stage__overlay" data-overlay aria-hidden="true"></div>
+          <div class="bear" data-bear aria-hidden="true">
+            <img src="/my-web/bear.svg" alt="" />
+          </div>
         </div>
         <div class="stage-hint">
           <span class="pill">提示</span>
@@ -142,6 +145,7 @@ const elStatus = app.querySelector('[data-status]')
 const stage = app.querySelector('[data-stage]')
 const box = app.querySelector('[data-box]')
 const overlay = app.querySelector('[data-overlay]')
+const bear = app.querySelector('[data-bear]')
 
 elMass.textContent = String(massKg)
 
@@ -215,6 +219,7 @@ function updateModeUI() {
   overlay.textContent = mode === 'manual' ? '手动拖动' : '自动施力'
   overlay.dataset.mode = mode
 
+  updateBearUI()
   updateNumbers()
 }
 
@@ -236,6 +241,10 @@ function clampBoxWithinStage() {
 function renderBox() {
   clampBoxWithinStage()
   box.style.transform = `translateX(${xPx}px)`
+  // bear stays slightly behind the box
+  if (bear) {
+    bear.style.transform = `translateX(${Math.max(0, xPx - 110)}px)`
+  }
 }
 
 function reset() {
@@ -318,11 +327,21 @@ function loop(t) {
   rafId = requestAnimationFrame(loop)
 }
 
+function updateBearUI() {
+  if (!bear) return
+  const show = mode === 'auto'
+  bear.dataset.visible = show ? 'true' : 'false'
+  // add a "pushing" animation only when running and applying force
+  const pushing = show && isRunning && autoForceN > 0
+  bear.dataset.pushing = pushing ? 'true' : 'false'
+}
+
 function start() {
   if (isRunning) return
   isRunning = true
   lastT = 0
   setStatus('模拟开始。', 'info')
+  updateBearUI()
   updateNumbers()
   rafId = requestAnimationFrame(loop)
 }
@@ -332,6 +351,7 @@ function pause() {
   manualForceN = 0
   if (rafId) cancelAnimationFrame(rafId)
   setStatus('已暂停。', 'info')
+  updateBearUI()
   updateNumbers()
 }
 
@@ -400,6 +420,7 @@ muInput.addEventListener('input', () => {
 
 forceInput.addEventListener('input', () => {
   autoForceN = Number(forceInput.value)
+  updateBearUI()
   updateNumbers()
 })
 
