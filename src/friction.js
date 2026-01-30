@@ -106,7 +106,9 @@ app.innerHTML = `
           </div>
           <div class="stage__overlay" data-overlay aria-hidden="true"></div>
           <div class="bear" data-bear aria-hidden="true">
-            <img class="bear__img" src="/my-web/bear.svg" alt="" />
+            <div class="bear__flip" aria-hidden="true">
+              <img class="bear__img" src="/my-web/bear.svg" alt="" />
+            </div>
           </div>
         </div>
         <div class="stage-hint">
