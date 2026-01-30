@@ -9,6 +9,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         friction: resolve(__dirname, 'friction.html'),
+        wheel: resolve(__dirname, 'wheel.html'),
       },
     },
   },
