@@ -243,7 +243,7 @@ function startBearPush() {
       {
         transform: [
           'translate(0px, 0px) rotate(0deg)',
-          'translate(2px, 2px) rotate(-2deg)',
+          'translate(3px, 2px) rotate(-3.2deg)',
           'translate(0px, 0px) rotate(0deg)',
         ],
       },
@@ -255,7 +255,13 @@ function startBearPush() {
     anims.push(
       animate(
         bearArmTop,
-        { transform: ['translateX(0px)', 'translateX(6px)', 'translateX(0px)'] },
+        {
+          transform: [
+            'translateX(0px) rotate(-6deg) scaleX(0.98)',
+            'translateX(10px) rotate(-12deg) scaleX(0.9)',
+            'translateX(0px) rotate(-6deg) scaleX(0.98)',
+          ],
+        },
         { duration: 0.42, easing: 'ease-in-out', repeat: Infinity }
       )
     )
@@ -264,8 +270,14 @@ function startBearPush() {
     anims.push(
       animate(
         bearArmBottom,
-        { transform: ['translateX(0px)', 'translateX(8px)', 'translateX(0px)'] },
-        { duration: 0.42, easing: 'ease-in-out', repeat: Infinity }
+        {
+          transform: [
+            'translateX(0px) rotate(6deg) scaleX(0.98)',
+            'translateX(12px) rotate(10deg) scaleX(0.88)',
+            'translateX(0px) rotate(6deg) scaleX(0.98)',
+          ],
+        },
+        { duration: 0.42, easing: 'ease-in-out', repeat: Infinity, delay: 0.04 }
       )
     )
   }
@@ -273,7 +285,10 @@ function startBearPush() {
     anims.push(
       animate(
         bearSweat,
-        { opacity: [0.2, 0.9, 0.2], transform: ['translateY(0px)', 'translateY(6px)', 'translateY(0px)'] },
+        {
+          opacity: [0.2, 0.9, 0.2],
+          transform: ['translateY(0px)', 'translateY(7px)', 'translateY(0px)'],
+        },
         { duration: 0.84, easing: 'ease-in-out', repeat: Infinity }
       )
     )
