@@ -172,7 +172,7 @@ let autoForceN = Number(forceInput.value)
 let bearAnim = null
 const bearScale = 1
 // compensate for Lottie canvas whitespace so the "hands" touch the box visually
-const bearContactOffsetPx = 18
+const bearContactOffsetPx = -20
 
 const bearAnimationData = {
   v: '5.7.4',
