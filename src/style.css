@@ -506,16 +506,140 @@ body {
   opacity: 1;
 }
 
-.bear__lottie {
+.bear__sprite {
+  position: relative;
   width: 100%;
   height: 100%;
+  /* face right */
+  transform: scaleX(-1);
+  transform-origin: center;
 }
 
-/* Lottie injects an <svg>; keep it crisp */
-.bear__lottie svg {
-  width: 100% !important;
-  height: 100% !important;
-  display: block;
+/* simple vector-ish bear built from divs */
+.bear__body {
+  position: absolute;
+  left: 36px;
+  top: 34px;
+  width: 70px;
+  height: 52px;
+  border-radius: 40px;
+  background: linear-gradient(135deg, #c08457, #8b5e3c);
+}
+
+.bear__head {
+  position: absolute;
+  left: 10px;
+  top: 22px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c08457, #8b5e3c);
+}
+
+.bear__ear {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c08457, #8b5e3c);
+}
+
+.bear__ear--left {
+  left: 6px;
+  top: 10px;
+}
+
+.bear__ear--right {
+  left: 34px;
+  top: 6px;
+}
+
+.bear__eye {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #0f172a;
+  top: 40px;
+}
+
+.bear__eye--left { left: 20px; }
+.bear__eye--right { left: 38px; }
+
+.bear__snout {
+  position: absolute;
+  left: 22px;
+  top: 48px;
+  width: 24px;
+  height: 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.bear__nose {
+  position: absolute;
+  left: 32px;
+  top: 52px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #0f172a;
+}
+
+.bear__mouth {
+  position: absolute;
+  left: 30px;
+  top: 58px;
+  width: 12px;
+  height: 8px;
+  border-bottom: 3px solid #0f172a;
+  border-radius: 0 0 10px 10px;
+}
+
+.bear__arm {
+  position: absolute;
+  height: 14px;
+  border-radius: 999px;
+  background: #8b5e3c;
+  top: 56px;
+}
+
+.bear__arm--top {
+  left: 62px;
+  width: 44px;
+}
+
+.bear__arm--bottom {
+  left: 58px;
+  top: 70px;
+  width: 42px;
+}
+
+.bear__leg {
+  position: absolute;
+  width: 18px;
+  height: 16px;
+  border-radius: 999px;
+  background: #8b5e3c;
+  top: 78px;
+}
+
+.bear__leg--left { left: 52px; }
+.bear__leg--right { left: 82px; }
+
+.bear__sweat {
+  position: absolute;
+  left: 52px;
+  top: 14px;
+  width: 8px;
+  height: 12px;
+  border-radius: 10px 10px 10px 10px;
+  background: #38bdf8;
+  opacity: 0;
+}
+
+.bear[data-pushing="true"] .bear__sweat {
+  opacity: 0.9;
 }
 
 .friction__footer {
