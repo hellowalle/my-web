@@ -508,6 +508,11 @@ body {
   display: block;
 }
 
+.bear__img {
+  transform: scaleX(-1);
+  transform-origin: center;
+}
+
 .bear[data-visible="true"] {
   opacity: 1;
 }
@@ -518,7 +523,7 @@ body {
   100% { transform: translateY(0) rotate(-1deg); }
 }
 
-.bear[data-pushing="true"] img {
+.bear[data-pushing="true"] .bear__img {
   animation: bearPush 420ms ease-in-out infinite;
 }
 

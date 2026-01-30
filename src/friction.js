@@ -106,7 +106,7 @@ app.innerHTML = `
           </div>
           <div class="stage__overlay" data-overlay aria-hidden="true"></div>
           <div class="bear" data-bear aria-hidden="true">
-            <img src="/my-web/bear.svg" alt="" />
+            <img class="bear__img" src="/my-web/bear.svg" alt="" />
           </div>
         </div>
         <div class="stage-hint">
@@ -241,9 +241,11 @@ function clampBoxWithinStage() {
 function renderBox() {
   clampBoxWithinStage()
   box.style.transform = `translateX(${xPx}px)`
-  // bear stays slightly behind the box
+  // bear stays to the left of the box and touches its edge
   if (bear) {
-    bear.style.transform = `translateX(${Math.max(0, xPx - 110)}px)`
+    const bearWidth = 120
+    const contactGap = 2
+    bear.style.transform = `translateX(${Math.max(0, xPx - bearWidth + contactGap)}px)`
   }
 }
 
