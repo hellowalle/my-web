@@ -163,6 +163,9 @@ const box = app.querySelector('[data-box]')
 const overlay = app.querySelector('[data-overlay]')
 const bear = app.querySelector('[data-bear]')
 const bearSprite = app.querySelector('[data-bear-sprite]')
+const bearArmTop = app.querySelector('.bear__arm--top')
+const bearArmBottom = app.querySelector('.bear__arm--bottom')
+const bearSweat = app.querySelector('.bear__sweat')
 
 elMass.textContent = String(massKg)
 
@@ -189,39 +192,93 @@ const bearContactOffsetPx = -6
 let bearPushAnim = null
 let bearBreatheAnim = null
 
+function cancelAnimGroup(group) {
+  if (!group) return
+  if (Array.isArray(group)) {
+    group.forEach((a) => a?.cancel?.())
+    return
+  }
+  group.cancel?.()
+}
+
 function stopBearAnimations() {
   if (bearPushAnim) {
-    bearPushAnim.cancel()
+    cancelAnimGroup(bearPushAnim)
     bearPushAnim = null
   }
   if (bearBreatheAnim) {
-    bearBreatheAnim.cancel()
+    cancelAnimGroup(bearBreatheAnim)
     bearBreatheAnim = null
   }
 }
 
 function startBearIdle() {
   if (!bearSprite || bearBreatheAnim) return
-  bearBreatheAnim = animate(
-    bearSprite,
-    { transform: ['translateY(0px)', 'translateY(2px)', 'translateY(0px)'] },
-    { duration: 1.2, easing: 'ease-in-out', repeat: Infinity }
+  const anims = []
+  anims.push(
+    animate(
+      bearSprite,
+      { transform: ['translateY(0px)', 'translateY(2px)', 'translateY(0px)'] },
+      { duration: 1.2, easing: 'ease-in-out', repeat: Infinity }
+    )
   )
+  if (bearSweat) {
+    anims.push(
+      animate(
+        bearSweat,
+        { opacity: [0, 0.6, 0] },
+        { duration: 1.4, easing: 'ease-in-out', repeat: Infinity, delay: 0.2 }
+      )
+    )
+  }
+  bearBreatheAnim = anims
 }
 
 function startBearPush() {
   if (!bearSprite || bearPushAnim) return
-  bearPushAnim = animate(
-    bearSprite,
-    {
-      transform: [
-        'translateY(0px) rotate(0deg)',
-        'translateY(2px) rotate(-1.5deg)',
-        'translateY(0px) rotate(0deg)',
-      ],
-    },
-    { duration: 0.45, easing: 'ease-in-out', repeat: Infinity }
+  const anims = []
+  anims.push(
+    animate(
+      bearSprite,
+      {
+        transform: [
+          'translate(0px, 0px) rotate(0deg)',
+          'translate(2px, 2px) rotate(-2deg)',
+          'translate(0px, 0px) rotate(0deg)',
+        ],
+      },
+      { duration: 0.42, easing: 'ease-in-out', repeat: Infinity }
+    )
   )
+  // Arms do a small "push" extension
+  if (bearArmTop) {
+    anims.push(
+      animate(
+        bearArmTop,
+        { transform: ['translateX(0px)', 'translateX(6px)', 'translateX(0px)'] },
+        { duration: 0.42, easing: 'ease-in-out', repeat: Infinity }
+      )
+    )
+  }
+  if (bearArmBottom) {
+    anims.push(
+      animate(
+        bearArmBottom,
+        { transform: ['translateX(0px)', 'translateX(8px)', 'translateX(0px)'] },
+        { duration: 0.42, easing: 'ease-in-out', repeat: Infinity }
+      )
+    )
+  }
+  if (bearSweat) {
+    anims.push(
+      animate(
+        bearSweat,
+        { opacity: [0.2, 0.9, 0.2], transform: ['translateY(0px)', 'translateY(6px)', 'translateY(0px)'] },
+        { duration: 0.84, easing: 'ease-in-out', repeat: Infinity }
+      )
+    )
+  }
+  bearPushAnim = anims
 }
 
 function updateBearUI() {
@@ -238,13 +295,13 @@ function updateBearUI() {
 
   if (pushing) {
     if (bearBreatheAnim) {
-      bearBreatheAnim.cancel()
+      cancelAnimGroup(bearBreatheAnim)
       bearBreatheAnim = null
     }
     startBearPush()
   } else {
     if (bearPushAnim) {
-      bearPushAnim.cancel()
+      cancelAnimGroup(bearPushAnim)
       bearPushAnim = null
     }
     startBearIdle()

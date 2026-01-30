@@ -510,28 +510,27 @@ body {
   position: relative;
   width: 100%;
   height: 100%;
-  /* face right */
-  transform: scaleX(-1);
+  /* face right (drawn as-is, no flip) */
   transform-origin: 70% 55%;
 }
 
 /* simple vector-ish bear built from divs */
 .bear__body {
   position: absolute;
-  left: 34px;
-  top: 34px;
-  width: 74px;
-  height: 52px;
+  left: 6px;
+  top: 40px;
+  width: 78px;
+  height: 46px;
   border-radius: 40px;
   background: linear-gradient(135deg, #c08457, #8b5e3c);
 }
 
 .bear__head {
   position: absolute;
-  left: 10px;
+  left: 62px;
   top: 22px;
-  width: 48px;
-  height: 48px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   background: linear-gradient(135deg, #c08457, #8b5e3c);
 }
@@ -545,12 +544,12 @@ body {
 }
 
 .bear__ear--left {
-  left: 6px;
-  top: 10px;
+  left: 62px;
+  top: 8px;
 }
 
 .bear__ear--right {
-  left: 34px;
+  left: 88px;
   top: 6px;
 }
 
@@ -563,13 +562,13 @@ body {
   top: 40px;
 }
 
-.bear__eye--left { left: 20px; }
-.bear__eye--right { left: 38px; }
+.bear__eye--left { left: 78px; }
+.bear__eye--right { left: 96px; }
 
 .bear__snout {
   position: absolute;
-  left: 22px;
-  top: 48px;
+  left: 90px;
+  top: 46px;
   width: 24px;
   height: 16px;
   border-radius: 12px;
@@ -578,8 +577,8 @@ body {
 
 .bear__nose {
   position: absolute;
-  left: 32px;
-  top: 52px;
+  left: 102px;
+  top: 50px;
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -588,8 +587,8 @@ body {
 
 .bear__mouth {
   position: absolute;
-  left: 30px;
-  top: 58px;
+  left: 100px;
+  top: 56px;
   width: 12px;
   height: 8px;
   border-bottom: 3px solid #0f172a;
@@ -601,18 +600,18 @@ body {
   height: 14px;
   border-radius: 999px;
   background: #8b5e3c;
-  top: 56px;
+  top: 60px;
 }
 
 .bear__arm--top {
-  left: 72px;
-  width: 42px;
+  left: 78px;
+  width: 44px;
 }
 
 .bear__arm--bottom {
-  left: 68px;
-  top: 70px;
-  width: 40px;
+  left: 74px;
+  top: 74px;
+  width: 46px;
 }
 
 .bear__leg {
@@ -624,16 +623,16 @@ body {
   top: 78px;
 }
 
-.bear__leg--left { left: 52px; }
-.bear__leg--right { left: 82px; }
+.bear__leg--left { left: 26px; }
+.bear__leg--right { left: 50px; }
 
 .bear__sweat {
   position: absolute;
-  left: 52px;
-  top: 14px;
+  left: 116px;
+  top: 18px;
   width: 8px;
   height: 12px;
-  border-radius: 10px 10px 10px 10px;
+  border-radius: 10px;
   background: #38bdf8;
   opacity: 0;
 }
