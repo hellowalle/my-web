@@ -502,36 +502,20 @@ body {
   filter: drop-shadow(0 10px 20px rgba(2, 6, 23, 0.22));
 }
 
-.bear img {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.bear__flip {
-  width: 100%;
-  height: 100%;
-  transform: scaleX(-1); /* make the bear face right */
-  transform-origin: center;
-}
-
-.bear__img {
-  transform-origin: center;
-}
-
 .bear[data-visible="true"] {
   opacity: 1;
 }
 
-@keyframes bearPush {
-  0% { transform: translateY(0) rotate(-1deg); }
-  50% { transform: translateY(2px) rotate(1deg); }
-  100% { transform: translateY(0) rotate(-1deg); }
+.bear__lottie {
+  width: 100%;
+  height: 100%;
 }
 
-/* Apply animation to the image; the flip is on the wrapper so it remains intact */
-.bear[data-pushing="true"] .bear__img {
-  animation: bearPush 420ms ease-in-out infinite;
+/* Lottie injects an <svg>; keep it crisp */
+.bear__lottie svg {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
 }
 
 .friction__footer {

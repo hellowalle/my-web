@@ -1,4 +1,5 @@
 import './style.css'
+import lottie from 'lottie-web'
 
 // --- Model (simplified Coulomb friction) ---
 // User chose: single friction coefficient μ, with mass included.
@@ -106,9 +107,7 @@ app.innerHTML = `
           </div>
           <div class="stage__overlay" data-overlay aria-hidden="true"></div>
           <div class="bear" data-bear aria-hidden="true">
-            <div class="bear__flip" aria-hidden="true">
-              <img class="bear__img" src="/my-web/bear.svg" alt="" />
-            </div>
+            <div class="bear__lottie" data-bear-lottie aria-hidden="true"></div>
           </div>
         </div>
         <div class="stage-hint">
@@ -148,6 +147,7 @@ const stage = app.querySelector('[data-stage]')
 const box = app.querySelector('[data-box]')
 const overlay = app.querySelector('[data-overlay]')
 const bear = app.querySelector('[data-bear]')
+const bearLottieHost = app.querySelector('[data-bear-lottie]')
 
 elMass.textContent = String(massKg)
 
@@ -167,6 +167,233 @@ let manualForceN = 0
 
 // Auto force
 let autoForceN = Number(forceInput.value)
+
+// Bear Lottie (simple custom animation)
+let bearAnim = null
+const bearScale = 1
+// compensate for Lottie canvas whitespace so the "hands" touch the box visually
+const bearContactOffsetPx = 18
+
+const bearAnimationData = {
+  v: '5.7.4',
+  fr: 60,
+  ip: 0,
+  op: 60,
+  w: 240,
+  h: 180,
+  nm: 'bear-push-simple',
+  ddd: 0,
+  assets: [],
+  layers: [
+    {
+      ddd: 0,
+      ind: 1,
+      ty: 4,
+      nm: 'body',
+      sr: 1,
+      ks: {
+        o: { a: 0, k: 100 },
+        r: {
+          a: 1,
+          k: [
+            { t: 0, s: [0] },
+            { t: 15, s: [-4] },
+            { t: 30, s: [0] },
+            { t: 45, s: [-4] },
+            { t: 60, s: [0] },
+          ],
+        },
+        p: {
+          a: 1,
+          k: [
+            { t: 0, s: [110, 102, 0] },
+            { t: 15, s: [106, 106, 0] },
+            { t: 30, s: [110, 102, 0] },
+            { t: 45, s: [106, 106, 0] },
+            { t: 60, s: [110, 102, 0] },
+          ],
+        },
+        a: { a: 0, k: [120, 90, 0] },
+        s: { a: 0, k: [100, 100, 100] },
+      },
+      shapes: [
+        {
+          ty: 'el',
+          p: { a: 0, k: [120, 100] },
+          s: { a: 0, k: [120, 92] },
+          nm: 'torso',
+        },
+        {
+          ty: 'el',
+          p: { a: 0, k: [82, 70] },
+          s: { a: 0, k: [72, 72] },
+          nm: 'head',
+        },
+        {
+          ty: 'el',
+          p: { a: 0, k: [60, 48] },
+          s: { a: 0, k: [26, 26] },
+          nm: 'ear1',
+        },
+        {
+          ty: 'el',
+          p: { a: 0, k: [92, 44] },
+          s: { a: 0, k: [26, 26] },
+          nm: 'ear2',
+        },
+        {
+          ty: 'st',
+          c: { a: 0, k: [0.27, 0.18, 0.12, 1] },
+          o: { a: 0, k: 100 },
+          w: { a: 0, k: 0 },
+          lc: 2,
+          lj: 2,
+          nm: 'stroke',
+        },
+        {
+          ty: 'fl',
+          c: { a: 0, k: [0.78, 0.52, 0.33, 1] },
+          o: { a: 0, k: 100 },
+          r: 1,
+          nm: 'fill',
+        },
+        {
+          ty: 'tr',
+          p: { a: 0, k: [0, 0] },
+          a: { a: 0, k: [0, 0] },
+          s: { a: 0, k: [100, 100] },
+          r: { a: 0, k: 0 },
+          o: { a: 0, k: 100 },
+          sk: { a: 0, k: 0 },
+          sa: { a: 0, k: 0 },
+        },
+      ],
+      ip: 0,
+      op: 60,
+      st: 0,
+      bm: 0,
+    },
+    {
+      ddd: 0,
+      ind: 2,
+      ty: 4,
+      nm: 'arms',
+      sr: 1,
+      ks: {
+        o: { a: 0, k: 100 },
+        r: { a: 0, k: 0 },
+        p: { a: 0, k: [0, 0, 0] },
+        a: { a: 0, k: [0, 0, 0] },
+        s: { a: 0, k: [100, 100, 100] },
+      },
+      shapes: [
+        {
+          ty: 'rc',
+          p: { a: 0, k: [155, 92] },
+          s: { a: 0, k: [74, 18] },
+          r: { a: 0, k: 9 },
+          nm: 'arm1',
+        },
+        {
+          ty: 'rc',
+          p: { a: 0, k: [150, 112] },
+          s: { a: 0, k: [68, 18] },
+          r: { a: 0, k: 9 },
+          nm: 'arm2',
+        },
+        {
+          ty: 'fl',
+          c: { a: 0, k: [0.65, 0.43, 0.27, 1] },
+          o: { a: 0, k: 100 },
+          r: 1,
+          nm: 'fill',
+        },
+        {
+          ty: 'tr',
+          p: {
+            a: 1,
+            k: [
+              { t: 0, s: [0, 0] },
+              { t: 15, s: [8, 0] },
+              { t: 30, s: [0, 0] },
+              { t: 45, s: [8, 0] },
+              { t: 60, s: [0, 0] },
+            ],
+          },
+          a: { a: 0, k: [0, 0] },
+          s: { a: 0, k: [100, 100] },
+          r: { a: 0, k: 0 },
+          o: { a: 0, k: 100 },
+          sk: { a: 0, k: 0 },
+          sa: { a: 0, k: 0 },
+        },
+      ],
+      ip: 0,
+      op: 60,
+      st: 0,
+      bm: 0,
+    },
+    {
+      ddd: 0,
+      ind: 3,
+      ty: 4,
+      nm: 'sweat',
+      sr: 1,
+      ks: {
+        o: {
+          a: 1,
+          k: [
+            { t: 0, s: [0] },
+            { t: 5, s: [100] },
+            { t: 40, s: [100] },
+            { t: 55, s: [0] },
+            { t: 60, s: [0] },
+          ],
+        },
+        r: { a: 0, k: 0 },
+        p: { a: 0, k: [0, 0, 0] },
+        a: { a: 0, k: [0, 0, 0] },
+        s: { a: 0, k: [100, 100, 100] },
+      },
+      shapes: [
+        {
+          ty: 'el',
+          p: { a: 0, k: [104, 46] },
+          s: { a: 0, k: [16, 22] },
+          nm: 'drop',
+        },
+        {
+          ty: 'fl',
+          c: { a: 0, k: [0.22, 0.74, 0.98, 1] },
+          o: { a: 0, k: 100 },
+          r: 1,
+          nm: 'fill',
+        },
+        {
+          ty: 'tr',
+          p: {
+            a: 1,
+            k: [
+              { t: 0, s: [0, 0] },
+              { t: 30, s: [0, 10] },
+              { t: 60, s: [0, 0] },
+            ],
+          },
+          a: { a: 0, k: [0, 0] },
+          s: { a: 0, k: [100, 100] },
+          r: { a: 0, k: 0 },
+          o: { a: 0, k: 100 },
+          sk: { a: 0, k: 0 },
+          sa: { a: 0, k: 0 },
+        },
+      ],
+      ip: 0,
+      op: 60,
+      st: 0,
+      bm: 0,
+    },
+  ],
+}
 
 // Stage geometry mapping
 let pxPerMeter = 180 // will be recalculated
@@ -243,11 +470,11 @@ function clampBoxWithinStage() {
 function renderBox() {
   clampBoxWithinStage()
   box.style.transform = `translateX(${xPx}px)`
-  // bear stays to the left of the box and touches its edge
+  // bear stays to the left of the box and visually touches its edge
   if (bear) {
     const bearWidth = 120
     const contactGap = 2
-    bear.style.transform = `translateX(${xPx - bearWidth + contactGap}px)`
+    bear.style.transform = `translateX(${xPx - bearWidth + contactGap - bearContactOffsetPx}px)`
   }
 }
 
@@ -331,13 +558,41 @@ function loop(t) {
   rafId = requestAnimationFrame(loop)
 }
 
+function ensureBearAnimation() {
+  if (!bearLottieHost || bearAnim) return
+  bearAnim = lottie.loadAnimation({
+    container: bearLottieHost,
+    renderer: 'svg',
+    loop: true,
+    autoplay: false,
+    animationData: bearAnimationData,
+    rendererSettings: {
+      progressiveLoad: true,
+      hideOnTransparent: true,
+    },
+  })
+  // scale to fit our bear box
+  bearLottieHost.style.transform = `scale(${bearScale})`
+  bearLottieHost.style.transformOrigin = 'left bottom'
+}
+
 function updateBearUI() {
   if (!bear) return
   const show = mode === 'auto'
   bear.dataset.visible = show ? 'true' : 'false'
-  // add a "pushing" animation only when running and applying force
+  if (show) ensureBearAnimation()
+
+  // play animation only when running and applying force
   const pushing = show && isRunning && autoForceN > 0
   bear.dataset.pushing = pushing ? 'true' : 'false'
+
+  if (bearAnim) {
+    if (pushing) {
+      bearAnim.play()
+    } else {
+      bearAnim.pause()
+    }
+  }
 }
 
 function start() {
