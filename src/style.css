@@ -512,15 +512,15 @@ body {
   height: 100%;
   /* face right */
   transform: scaleX(-1);
-  transform-origin: center;
+  transform-origin: 70% 55%;
 }
 
 /* simple vector-ish bear built from divs */
 .bear__body {
   position: absolute;
-  left: 36px;
+  left: 34px;
   top: 34px;
-  width: 70px;
+  width: 74px;
   height: 52px;
   border-radius: 40px;
   background: linear-gradient(135deg, #c08457, #8b5e3c);
@@ -605,14 +605,14 @@ body {
 }
 
 .bear__arm--top {
-  left: 62px;
-  width: 44px;
+  left: 72px;
+  width: 42px;
 }
 
 .bear__arm--bottom {
-  left: 58px;
+  left: 68px;
   top: 70px;
-  width: 42px;
+  width: 40px;
 }
 
 .bear__leg {

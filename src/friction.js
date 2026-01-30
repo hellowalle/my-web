@@ -185,7 +185,7 @@ let autoForceN = Number(forceInput.value)
 
 // Bear (Motion animation)
 // Visual contact offset so the bear "hands" touch the box.
-const bearContactOffsetPx = -12
+const bearContactOffsetPx = -6
 let bearPushAnim = null
 let bearBreatheAnim = null
 
