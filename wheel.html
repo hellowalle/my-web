@@ -115,11 +115,13 @@
       justify-content: center;
       width: 60px;
       height: 60px;
-      /* 默认定位在圆心 */
+      /* 定位到圆心，旋转中心也在圆心 */
       left: 50%;
       top: 50%;
       margin-left: -30px;
-      margin-top: -100px;
+      margin-top: -30px;
+      /* 关键：transform-origin 在圆心，先旋转再向外平移 */
+      transform-origin: center center;
     }
 
     .wheel-center {
@@ -317,10 +319,12 @@
 
       .label {
         font-size: 0.7rem;
-        width: 50px;
-        height: 50px;
-        margin-left: -25px;
-        margin-top: -80px;
+        width: 45px;
+        height: 45px;
+        margin-left: -22.5px;
+        margin-top: -22.5px;
+        /* 移动端向外平移距离减小 */
+        transform: rotate(var(--angle, 0deg)) translateY(-70px);
       }
     }
   </style>
@@ -397,9 +401,11 @@
       prizes.forEach((prize, index) => {
         const label = document.createElement('div');
         label.className = 'label';
+        
         // 每个扇区60度，第i个扇区中心在 30 + i*60 度
-        // 使用 CSS transform rotate 旋转标签
-        label.style.transform = `rotate(${index * 60 + 30}deg)`;
+        // 旋转后向外平移 100px，这样每个 label 会在不同的位置
+        const angle = index * 60 + 30;
+        label.style.transform = `rotate(${angle}deg) translateY(-100px)`;
         label.innerHTML = `${prize.icon}<br>${prize.name}`;
         labelsContainer.appendChild(label);
       });
