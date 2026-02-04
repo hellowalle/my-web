@@ -76,29 +76,48 @@
                   0 0 60px rgba(99, 102, 241, 0.1);
     }
 
-    .wheel-segment {
+    /* 扇区样式 - 使用 conic-gradient 方式创建 */
+    .wheel-bg {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
       position: absolute;
-      width: 50%;
-      height: 50%;
-      left: 50%;
       top: 0;
-      transform-origin: 0% 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      clip-path: polygon(0 100%, 100% 0, 0 0);
+      left: 0;
+      background: conic-gradient(
+        from 0deg,
+        #ef4444 0deg 60deg,
+        #f59e0b 60deg 120deg,
+        #10b981 120deg 180deg,
+        #6366f1 180deg 240deg,
+        #8b5cf6 240deg 300deg,
+        #ec4899 300deg 360deg
+      );
     }
 
-    .segment-content {
+    /* 扇区文字容器 */
+    .wheel-labels {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
       position: absolute;
-      transform: rotate(45deg) translateY(-20px);
-      text-align: center;
+      top: 0;
+      left: 0;
+    }
+
+    .label {
+      position: absolute;
       color: white;
       font-weight: 600;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-      width: 80px;
+      transform-origin: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 60px;
+      height: 60px;
     }
 
     .wheel-center {
@@ -148,6 +167,48 @@
       clip-path: polygon(50% 100%, 0 0, 100% 0);
       z-index: 15;
       filter: drop-shadow(0 4px 6px rgba(245, 158, 11, 0.4));
+    }
+
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 30px;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .rules {
+      margin-top: 30px;
+      padding: 20px;
+      background: var(--card);
+      border-radius: 12px;
+    }
+
+    .rules h3 {
+      color: var(--text);
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+
+    .rules p {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      line-height: 1.6;
     }
 
     .result-modal {
@@ -228,48 +289,6 @@
       box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
     }
 
-    .stats {
-      display: flex;
-      justify-content: center;
-      gap: 30px;
-      margin-top: 30px;
-      flex-wrap: wrap;
-    }
-
-    .stat-item {
-      text-align: center;
-    }
-
-    .stat-value {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: var(--primary);
-    }
-
-    .stat-label {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
-
-    .rules {
-      margin-top: 30px;
-      padding: 20px;
-      background: var(--card);
-      border-radius: 12px;
-    }
-
-    .rules h3 {
-      color: var(--text);
-      margin-bottom: 10px;
-      font-size: 1rem;
-    }
-
-    .rules p {
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      line-height: 1.6;
-    }
-
     @media (max-width: 480px) {
       .wheel-container {
         width: 280px;
@@ -293,6 +312,12 @@
       .modal-prize {
         font-size: 1.4rem;
       }
+
+      .label {
+        font-size: 0.7rem;
+        width: 50px;
+        height: 50px;
+      }
     }
   </style>
 </head>
@@ -304,7 +329,8 @@
     <div class="wheel-container">
       <div class="pointer"></div>
       <div class="wheel" id="wheel">
-        <!-- 转盘扇区由 JS 生成 -->
+        <div class="wheel-bg"></div>
+        <div class="wheel-labels" id="wheelLabels"></div>
       </div>
       <div class="wheel-center" id="spinBtn">开始<br>抽奖</div>
     </div>
@@ -359,23 +385,32 @@
     let isSpinning = false;
     let currentRotation = 0;
 
-    // 初始化转盘
+    // 初始化转盘标签
     function initWheel() {
-      const wheel = document.getElementById('wheel');
-      wheel.innerHTML = '';
+      const labelsContainer = document.getElementById('wheelLabels');
+      labelsContainer.innerHTML = '';
 
       prizes.forEach((prize, index) => {
-        const segment = document.createElement('div');
-        segment.className = 'wheel-segment';
-        segment.style.transform = `rotate(${index * 60}deg)`;
-        segment.style.background = prize.color;
+        const label = document.createElement('div');
+        label.className = 'label';
 
-        const content = document.createElement('div');
-        content.className = 'segment-content';
-        content.innerHTML = `${prize.icon}<br>${prize.name}`;
+        // 每个扇区60度，计算中心位置
+        // 扇区中心角度 = index * 60 + 30
+        // 标签应该放在圆半径的 65% 位置
+        const angle = (index * 60 + 30) * (Math.PI / 180);
+        const radius = 0.65; // 距离圆心的比例
+        const centerX = 50; // 50% 是圆心
+        const centerY = 50; // 50% 是圆心
 
-        segment.appendChild(content);
-        wheel.appendChild(segment);
+        // 计算标签位置（从圆心向外偏移）
+        const x = centerX + (radius * 50) * Math.cos(angle - Math.PI / 2);
+        const y = centerY + (radius * 50) * Math.sin(angle - Math.PI / 2);
+
+        label.style.left = `calc(${x}% - 30px)`;
+        label.style.top = `calc(${y}% - 30px)`;
+        label.innerHTML = `${prize.icon}<br>${prize.name}`;
+
+        labelsContainer.appendChild(label);
       });
 
       updateStats();
@@ -410,14 +445,21 @@
       const prizeIndex = prizes.indexOf(prize);
 
       // 计算旋转角度
-      // 每个扇区60度，0度指向第一个扇区的中心
-      // 需要让指针指向目标扇区的中心
       const baseSpins = 5; // 至少转5圈
       const segmentAngle = 360 / prizes.length; // 每个扇区60度
 
-      // 目标角度：让第 prizeIndex 个扇区停在顶部
-      // 指针在顶部（0度），需要旋转使得目标扇区的中心对准指针
-      const targetRotation = baseSpins * 360 + (360 - prizeIndex * segmentAngle - segmentAngle / 2);
+      // 关键计算：
+      // conic-gradient 的 0 度在右侧（3点钟方向）
+      // 指针在顶部（12点钟方向，对应 270 度）
+      // 第 i 个扇区中心 = i * 60 + 30
+      // 需要顺时针旋转，让目标扇区到达顶部（270度）
+      // 旋转角度 = 270 - 当前扇区中心 + 360（确保正数）+ 额外圈数
+      const targetRotation = 270 - (prizeIndex * segmentAngle + segmentAngle / 2) + 360 + baseSpins * 360;
+
+      // 累加旋转（逆时针转，所以用减法，或者正转但目标角度要调整）
+      // 这里使用正转，conic-gradient from 0deg 表示0度在右侧
+      // 指针在顶部，我们需要让目标扇区移动到顶部
+      // 实际上：让转盘旋转 targetAngle 度，使得目标扇区到达顶部
 
       currentRotation += targetRotation;
 
@@ -450,9 +492,6 @@
 
       modalPrize.innerHTML = `${prize.icon} ${prize.name}`;
       modal.classList.add('show');
-
-      // 播放庆祝动画
-      celebrate();
     }
 
     // 关闭弹窗
@@ -463,14 +502,8 @@
 
     // 更新统计
     function updateStats() {
-      document.getElementById('totalSpins'). textContent = totalSpins;
+      document.getElementById('totalSpins').textContent = totalSpins;
       document.getElementById('totalWins').textContent = totalWins;
-    }
-
-    // 庆祝动画效果
-    function celebrate() {
-      // 可以添加更多庆祝效果
-      console.log('🎉 恭喜获得:', prizes.find(p => p.name === document.getElementById('modalPrize').textContent.replace(/[🎵📺📻🧺📱💻]/g, '').trim())?.name || '奖品');
     }
 
     // 初始化
@@ -493,16 +526,14 @@
     // 初始化转盘
     initWheel();
 
-    // 测试功能
+    // 调试信息
     console.log('✅ 幸运大转盘已加载');
-    console.log('📋 功能列表:');
-    console.log('  - 6个奖品抽奖功能');
-    console.log('  - 概率抽奖系统');
-    console.log('  - 平滑旋转动画');
-    console.log('  - 中奖弹窗提示');
-    console.log('  - 抽奖统计（本地存储）');
-    console.log('  - 响应式设计');
-    console.log('  - 键盘支持（ESC关闭弹窗）');
+    console.log('📋 奖品列表:');
+    prizes.forEach((p, i) => {
+      console.log(`  ${i}: ${p.name} (${p.probability}%)`);
+    });
+    console.log('🔄 指针在顶部，0度位置');
+    console.log('📐 扇区中心角度计算: index * 60 + 30');
   </script>
 </body>
 </html>
